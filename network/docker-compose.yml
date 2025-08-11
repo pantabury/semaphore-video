@@ -39,5 +39,5 @@ services:
       - SYS_MODULE
     restart: unless-stopped
     environment:
-      - TAILSCALE_AUTHKEY=${TAILSCALE_AUTHKEY}
+      - TS_AUTH=${TAILSCALE_AUTHKEY}
     command: tailscaled
