@@ -4,7 +4,8 @@
   become: yes
   vars:
     repo_url: "https://github.com/pantabury/semaphore-video.git"
-    repo_dest: "/opt/my-docker-app"
+    repo_dest: "/opt/network-apps"
+    repo_dir: "/opt/network-apps/network"
 
   tasks:
     - name: Remove old Docker packages
@@ -74,5 +75,5 @@
 
     - name: Run docker compose up
       community.docker.docker_compose_v2:
-        project_src: "{{ repo_dest }}"
+        project_src: "{{ repo_dir }}"
         state: present
