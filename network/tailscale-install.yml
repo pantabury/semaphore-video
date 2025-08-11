@@ -1,0 +1,24 @@
+---
+- name: Install and configure Tailscale
+  hosts: your_target_hosts
+  become: yes
+
+  vars:
+    tailscale_auth_key: "tskey-auth-kq37EThRKF11CNTRL-jU2qvqu3aPMZxrWaacNiPMYH94LSJ3io9"
+
+  tasks:
+    - name: Install Tailscale using their install script
+      shell: curl -fsSL https://tailscale.com/install.sh | sh
+      args:
+        warn: false
+
+    - name: Start and enable tailscaled service
+      systemd:
+        name: tailscaled
+        state: started
+        enabled: yes
+
+    - name: Authenticate and bring Tailscale up with auth key
+      shell: tailscale up --auth-key={{ tailscale_auth_key }}
+      register: tailscale_up_result
+      changed_when: "'Success' in tailscale_up_result.stdout or 'already' in tailscale_up_result.stdout"
