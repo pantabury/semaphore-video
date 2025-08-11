@@ -1,18 +1,4 @@
 services:
-  pihole:
-    container_name: pihole
-    image: pihole/pihole:latest
-    environment:
-      TZ: "${TZ}"
-      WEBPASSWORD: "${WEBPASSWORD}"
-    volumes:
-      - ./pihole/etc-pihole:/etc/pihole
-      - ./pihole/etc-dnsmasq.d:/etc/dnsmasq.d
-    network_mode: host
-    restart: unless-stopped
-    cap_add:
-      - NET_ADMIN
-
   npm:
     container_name: npm
     image: jc21/nginx-proxy-manager:latest
