@@ -1,12 +1,11 @@
-version: "3.8"
-
+---
 services:
   pihole:
     container_name: pihole
     image: pihole/pihole:latest
     environment:
       TZ: "Europe/London"
-      WEBPASSWORD: "changeme"
+      WEBPASSWORD: "tesco"
     volumes:
       - ./pihole/etc-pihole:/etc/pihole
       - ./pihole/etc-dnsmasq.d:/etc/dnsmasq.d
