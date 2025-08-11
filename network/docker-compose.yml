@@ -13,16 +13,14 @@ services:
     networks:
       - npm_network
     environment:
-      - TZ=Europe/London
+      - TZ=${TZ}
       - DB_MYSQL_HOST=postgres
       - DB_MYSQL_PORT=5432
-      - DB_MYSQL_USER=npm
-      - DB_MYSQL_NAME=npm_db
+      - DB_MYSQL_USER=${NPM_DB_USER}
+      - DB_MYSQL_PASSWORD=${NPM_DB_PASSWORD}
+      - DB_MYSQL_NAME=${NPM_DB_NAME}
       - DISABLE_IPV6=true
       - LOG_LEVEL=info
-      - DB_MYSQL_PASSWORD_FILE=/run/secrets/npm_db_password
-    secrets:
-      - npm_db_password
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:81"]
       interval: 30s
@@ -33,83 +31,31 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
-    user: "1000:1000"  # adjust as needed
-
-  postgres:
-    container_name: npm_postgres
-    image: postgres:15
-    environment:
-      - POSTGRES_USER=npm
-      - POSTGRES_DB=npm_db
-      - POSTGRES_PASSWORD_FILE=/run/secrets/npm_db_password
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    restart: unless-stopped
-    networks:
-      - npm_network
-    secrets:
-      - npm_db_password
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U npm"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 30s
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    user: "999:999"  # postgres user uid
-
-  portainer:
-    container_name: portainer
-    image: portainer/portainer-ce:latest
-    ports:
-      - "9000:9000"
-    volumes:
-      - portainer_data:/data
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    restart: unless-stopped
-    networks:
-      - npm_network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/api/status"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    user: "1000:1000"  # adjust if necessary
 
   netbox:
     container_name: netbox
     image: netboxcommunity/netbox:latest
     ports:
-      - "8000:8080"  # maps host 8000 to container 8080
+      - "8000:8080"
     environment:
       - ALLOWED_HOSTS=*
-      - DB_NAME=netbox
-      - DB_USER=netbox
-      - DB_PASSWORD_FILE=/run/secrets/netbox_db_password
-      - DB_HOST=netbox_postgres
+      - DB_HOST=postgres
       - DB_PORT=5432
+      - DB_USER=${NETBOX_DB_USER}
+      - DB_PASSWORD=${NETBOX_DB_PASSWORD}
+      - DB_NAME=${NETBOX_DB_NAME}
       - REDIS_HOST=netbox_redis
       - REDIS_PORT=6379
-      - TZ=Europe/London
+      - TZ=${TZ}
     volumes:
       - netbox_media:/opt/netbox/netbox/media
       - netbox_static:/opt/netbox/netbox/static
     restart: unless-stopped
     depends_on:
-      - netbox_postgres
+      - postgres
       - netbox_redis
     networks:
       - npm_network
-    secrets:
-      - netbox_db_password
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8080/healthz || exit 1"]
       interval: 30s
@@ -120,24 +66,22 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
-    user: "1000:1000"  # adjust as needed
+    user: "1000:1000"
 
-  netbox_postgres:
-    container_name: netbox_postgres
+  postgres:
+    container_name: postgres
     image: postgres:15
     environment:
-      - POSTGRES_USER=netbox
-      - POSTGRES_DB=netbox
-      - POSTGRES_PASSWORD_FILE=/run/secrets/netbox_db_password
+      - POSTGRES_USER=${POSTGRES_SUPERUSER}
+      - POSTGRES_PASSWORD=${POSTGRES_SUPERUSER_PASSWORD}
     volumes:
-      - netbox_pgdata:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     restart: unless-stopped
     networks:
       - npm_network
-    secrets:
-      - netbox_db_password
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U netbox"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_SUPERUSER}"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -164,23 +108,15 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
-    user: "1000:1000"  # redis default user
+    user: "1000:1000"
 
 volumes:
   npm_data:
   npm_letsencrypt:
   pgdata:
-  portainer_data:
   netbox_media:
   netbox_static:
-  netbox_pgdata:
 
 networks:
   npm_network:
     driver: bridge
-
-secrets:
-  npm_db_password:
-    file: ./secrets/npm_db_password.txt
-  netbox_db_password:
-    file: ./secrets/netbox_db_password.txt
